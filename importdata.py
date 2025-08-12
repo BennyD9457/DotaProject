@@ -5,7 +5,9 @@ from flask import Flask, request, abort
 import numpy as np
 import signal, sys
 from DataStore import Series
-
+import sqlite3
+import sys 
+from sqliteCode import init_db, add_point, start_game
 
 app = Flask(__name__)
 
@@ -31,9 +33,35 @@ def extract_GameData(payload: dict):
 
 
 def dump_and_exit(*_):
+    conn = sqlite3.connect("GameData.db")
+    game_id = 1
+
+    # Insert all datapoints
+    for dp in series.get():
+        conn.execute("""
+            INSERT INTO GameData (game_id, Seconds, Kill, Deaths, LastHits)
+            VALUES (?, ?, ?, ?, ?)
+        """, (game_id, dp._idx, dp.kills, dp.deaths, dp.last_hits))
+
+    # Commit so we can see the new rows in the select
+    conn.commit()
+
+    # Print all rows in the DB
+    print("\n--- Database Contents ---")
+    for row in conn.execute("SELECT * FROM GameData"):
+        print(row)
+
+    conn.close()
+    sys.stdout.flush()
+    sys.exit(0)
+
 
     for dp in series.get():
-        print((dp._idx,dp.kills, dp.deaths, dp.last_hits))
+      conn = sqlite3.connect("GameData.db")
+    
+      
+            
+
     sys.stdout.flush()
     sys.exit(0)
 
